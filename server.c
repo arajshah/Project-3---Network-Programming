@@ -27,7 +27,226 @@ char const *server_MOTD = "Thanks for connecting to the BisonChat Server.\n\ncha
 
 // Global user and room lists
 User *user_head = NULL;
+User *temp = NULL;
 Room *room_head = NULL;
+
+// Definitions for stubs from server.h
+
+void addRoom(const char *roomname) {
+    // Create new Room and insert at head of the list
+    Room *newRoom = malloc(sizeof(Room));
+    strcpy(newRoom->name, roomname);
+    newRoom->users = NULL;
+    newRoom->next = room_head;
+    room_head = newRoom;
+}
+
+void freeAllUsers(User **user_head_ref) {
+    // Free entire user list
+    User *current = *user_head_ref;
+    while (current) {
+        User *temp = current;
+        current = current->next;
+        // Free directConns and rooms if needed
+        free(temp);
+    }
+    *user_head_ref = NULL;
+}
+
+void freeAllRooms(Room **room_head_ref) {
+    // Free all rooms and their RoomUser lists
+    Room *current = *room_head_ref;
+    while (current) {
+        RoomUser *ru = current->users;
+        while (ru) {
+            RoomUser *tempRU = ru;
+            ru = ru->next;
+            free(tempRU);
+        }
+        Room *tempR = current;
+        current = current->next;
+        free(tempR);
+    }
+    *room_head_ref = NULL;
+}
+
+void addUser(int socket, const char *username) {
+    // Insert user at the head of user list
+    User *newUser = malloc(sizeof(User));
+    newUser->socket = socket;
+    strcpy(newUser->username, username);
+    newUser->rooms = NULL; // Implement RoomList if needed
+    newUser->directConns = NULL;
+    temp = user_head;
+    newUser->next = temp;
+    user_head = newUser;
+}
+
+void addUserToRoom(const char *username, const char *roomname) {
+    // Find the room
+    Room *r = findRoomByName(roomname);
+    if (!r) return; 
+    // Add user to room's user list
+    RoomUser *newRU = malloc(sizeof(RoomUser));
+    strcpy(newRU->username, username);
+    newRU->next = r->users;
+    r->users = newRU;
+}
+
+User *findUserBySocket(int socket) {
+    // Linear search for user by socket
+    User *current = user_head;
+    while (current) {
+        if (current->socket == socket) return current;
+        current = current->next;
+    }
+    return NULL;
+}
+
+Room *findRoomByName(const char *roomname) {
+    // Linear search for room by name
+    Room *current = room_head;
+    while (current) {
+        if (strcmp(current->name, roomname) == 0) return current;
+        current = current->next;
+    }
+    return NULL;
+}
+
+void removeUserFromRoom(const char *username, const char *roomname) {
+    // Find the room
+    Room *r = findRoomByName(roomname);
+    if (!r) return;
+    // Remove user from that room's user list
+    RoomUser *prev = NULL, *cur = r->users;
+    while (cur) {
+        if (strcmp(cur->username, username) == 0) {
+            if (prev) prev->next = cur->next;
+            else r->users = cur->next;
+            free(cur);
+            return;
+        }
+        prev = cur;
+        cur = cur->next;
+    }
+}
+
+User *findUserByName(const char *username) {
+    // Linear search for user by name
+    User *current = user_head;
+    while (current) {
+        if (strcmp(current->username, username) == 0) return current;
+        current = current->next;
+    }
+    return NULL;
+}
+
+void addDirectConnection(const char *fromUser, const char *toUser) {
+    // Find fromUser
+    User *u = findUserByName(fromUser);
+    if (!u) return;
+    // Add a new DirectConn node
+    DirectConn *dc = malloc(sizeof(DirectConn));
+    strcpy(dc->username, toUser);
+    dc->next = u->directConns;
+    u->directConns = dc;
+}
+
+void removeDirectConnection(const char *fromUser, const char *toUser) {
+    // Find fromUser
+    User *u = findUserByName(fromUser);
+    if (!u) return;
+    // Remove toUser from directConns list
+    DirectConn *prev = NULL, *cur = u->directConns;
+    while (cur) {
+        if (strcmp(cur->username, toUser) == 0) {
+            if (prev) prev->next = cur->next;
+            else u->directConns = cur->next;
+            free(cur);
+            return;
+        }
+        prev = cur;
+        cur = cur->next;
+    }
+}
+
+void listAllRooms(int client_socket) {
+    // Iterate over room_head and send room names
+    char buffer[256];
+    strcpy(buffer, "Rooms list:\n");
+    send(client_socket, buffer, strlen(buffer), 0);
+
+    Room *cur = room_head;
+    while (cur) {
+        sprintf(buffer, "%s\n", cur->name);
+        send(client_socket, buffer, strlen(buffer), 0);
+        cur = cur->next;
+    }
+    send(client_socket, "chat>", 5, 0);
+}
+
+void listAllUsers(int client_socket, int requesting_socket) {
+    // Iterate over user_head and send usernames
+    char buffer[256];
+    strcpy(buffer, "Users list:\n");
+    send(client_socket, buffer, strlen(buffer), 0);
+
+    User *cur = user_head;
+    while (cur) {
+        sprintf(buffer, "debug arajpro123 suprabhatpro123 rahualpro123%s\n", user_head->next->username);
+        send(client_socket, buffer, strlen(buffer), 0);
+        sprintf(buffer, "%s\n", cur->username);
+        send(client_socket, buffer, strlen(buffer), 0);
+        cur = cur->next;
+    }
+    send(client_socket, "chat>", 5, 0);
+}
+
+void renameUser(int socket, const char *newName) {
+    // Find user by socket and rename
+    User *u = findUserBySocket(socket);
+    if (u) {
+        strcpy(u->username, newName);
+    }
+}
+
+void removeAllUserConnections(const char *username) {
+    // Find the user
+    User *u = findUserByName(username);
+    if (!u) return;
+    // Free all direct connections
+    DirectConn *dc = u->directConns;
+    while (dc) {
+        DirectConn *temp = dc;
+        dc = dc->next;
+        free(temp);
+    }
+    u->directConns = NULL;
+    // If you have room memberships stored separately, remove user from all rooms here
+}
+
+void removeUser(int socket) {
+    // Remove user from user_head list
+    User *prev = NULL, *current = user_head;
+    while (current) {
+        if (current->socket == socket) {
+            // Free directConns if needed
+            DirectConn *dc = current->directConns;
+            while (dc) {
+                DirectConn *tmp = dc;
+                dc = dc->next;
+                free(tmp);
+            }
+            // Free RoomList if implemented
+            if (prev) prev->next = current->next;
+            else user_head = current->next;
+            free(current);
+            return;
+        }
+        prev = current;
+        current = current->next;
+    }
+}
 
 int main(int argc, char **argv) {
     // Register SIGINT (CTRL+C) handler to gracefully shutdown

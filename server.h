@@ -22,7 +22,6 @@
 #define TRUE   1  
 #define FALSE  0  
 #define PORT 8888  
-#define delimiters " "
 #define max_clients  30
 #define DEFAULT_ROOM "Lobby"
 #define MAXBUFF   2096
@@ -60,7 +59,7 @@ typedef struct Room {
 
 extern User *user_head;
 extern Room *room_head;
-
+extern const char *delimiters;
 
 // prototypes
 
@@ -69,3 +68,21 @@ int start_server(int serv_socket, int backlog);
 int accept_client(int serv_sock);
 void sigintHandler(int sig_num);
 void *client_receive(void *ptr);
+
+// Stubs for all required functions referenced in server.c and server_client.c
+void addRoom(const char *roomname);
+void freeAllUsers(User **user_head_ref);
+void freeAllRooms(Room **room_head_ref);
+void addUser(int socket, const char *username);
+void addUserToRoom(const char *username, const char *roomname);
+User *findUserBySocket(int socket);
+Room *findRoomByName(const char *roomname);
+void removeUserFromRoom(const char *username, const char *roomname);
+User *findUserByName(const char *username);
+void addDirectConnection(const char *fromUser, const char *toUser);
+void removeDirectConnection(const char *fromUser, const char *toUser);
+void listAllRooms(int client_socket);
+void listAllUsers(int client_socket, int requesting_socket);
+void renameUser(int socket, const char *newName);
+void removeAllUserConnections(const char *username);
+void removeUser(int socket);
