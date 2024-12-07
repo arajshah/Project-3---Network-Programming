@@ -26,7 +26,40 @@
 #define max_clients  30
 #define DEFAULT_ROOM "Lobby"
 #define MAXBUFF   2096
-#define BACKLOG 2 
+#define BACKLOG 2
+#define MAX_NAME_LEN 50
+#define MAX_ROOMS 100
+#define MAX_USERS 100
+#define MAX_DIRECT_CONN 50
+
+typedef struct DirectConn {
+    char username[MAX_NAME_LEN];
+    struct DirectConn *next;
+} DirectConn;
+
+typedef struct User {
+    int socket;
+    char username[MAX_NAME_LEN];
+    // A linked list of rooms the user belongs to
+    struct RoomList *rooms; 
+    // A linked list of direct connections (DMs)
+    DirectConn *directConns;
+    struct User *next;
+} User;
+
+typedef struct RoomUser {
+    char username[MAX_NAME_LEN];
+    struct RoomUser *next;
+} RoomUser;
+
+typedef struct Room {
+    char name[MAX_NAME_LEN];
+    RoomUser *users;  
+    struct Room *next;
+} Room;
+
+extern User *user_head;
+extern Room *room_head;
 
 
 // prototypes
