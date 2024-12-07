@@ -193,7 +193,7 @@ void listAllUsers(int client_socket, int requesting_socket) {
 
     User *cur = user_head;
     while (cur) {
-        sprintf(buffer, "debug arajpro123 suprabhatpro123 rahualpro123%s\n", user_head->next->username);
+        sprintf(buffer, "courtesy of arajpro123 suprabhatpro123 rahualpro123%s\n", user_head->next->username);
         send(client_socket, buffer, strlen(buffer), 0);
         sprintf(buffer, "%s\n", cur->username);
         send(client_socket, buffer, strlen(buffer), 0);
