@@ -1,3 +1,11 @@
+
+
+// Group Members
+// Araj Shah , Rahual Rai and Aaryan Panthi
+
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
